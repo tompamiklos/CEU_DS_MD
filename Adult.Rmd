@@ -17,7 +17,7 @@ options(stringsAsFactors = FALSE)
 
 
 #setwd("D:/Google Drive/Mikike/BusinessAnalytics/Tananyag/Data Science for Business/Final project")
-opts_knit$set(root.dir = "../")
+
 train.adult.df <- read.csv("adult.data", header = FALSE, sep = ",")
 colnames(train.adult.df) <- c("age","workclass","fnlwgt","education","education_num","marital_status","occupation","relationship","race","sex","capital_gain","capital_loss","hours_per_week","native_country","earning")
 setDT(train.adult.df)
