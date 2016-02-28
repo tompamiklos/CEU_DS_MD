@@ -1,0 +1,52 @@
+---
+title: "Adult"
+author: "TM"
+date: "2016. február 28."
+output: html_document
+---
+```{r, echo=FALSE}
+library(dplyr)
+library(ggplot2)
+library(randomForest)
+library(data.table)
+
+library(knitr)
+opts_knit$set(root.dir = "../")
+options(stringsAsFactors = FALSE)
+##### Opening and basic formating of datasets
+
+
+#setwd("D:/Google Drive/Mikike/BusinessAnalytics/Tananyag/Data Science for Business/Final project")
+opts_knit$set(root.dir = "../")
+train.adult.df <- read.csv("adult.data", header = FALSE, sep = ",")
+colnames(train.adult.df) <- c("age","workclass","fnlwgt","education","education_num","marital_status","occupation","relationship","race","sex","capital_gain","capital_loss","hours_per_week","native_country","earning")
+setDT(train.adult.df)
+train.adult.df[train.adult.df==" ?",]=NA
+
+test.adult.df <- read.csv("adult.test", header = FALSE, sep = ",")
+colnames(test.adult.df) <- c("age","workclass","fnlwgt","education","education_num","marital_status","occupation","relationship","race","sex","capital_gain","capital_loss","hours_per_week","native_country","earning")
+setDT(test.adult.df)
+test.adult.df[test.adult.df==" ?",]=NA
+test.adult.df <- test.adult.df[-1,]
+
+
+dt <- train.adult.df
+
+
+```
+
+This Markdown 'r nrow(dt)' was made as to document a machine learning process, that aims a classification of  a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
