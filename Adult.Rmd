@@ -4,15 +4,16 @@ author: "TM"
 date: "2016. február 28."
 output: html_document
 ---
-```{r, echo=FALSE}
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
 library(dplyr)
 library(ggplot2)
 library(randomForest)
 library(data.table)
-
+library(pander)
 library(knitr)
 opts_knit$set(root.dir = "../")
 options(stringsAsFactors = FALSE)
+
 ##### Opening and basic formating of datasets
 
 
@@ -29,15 +30,99 @@ setDT(test.adult.df)
 test.adult.df[test.adult.df==" ?",]=NA
 test.adult.df <- test.adult.df[-1,]
 
-
 dt <- train.adult.df
 
 
 ```
+#Executive summary
 
-This Markdown 'r nrow(dt)' was made as to document a machine learning process, that aims a classification of  a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+This **Documentation** was created to introduce a process of classifying  `r nrow(dt)` adults by their earnings based on their social and professional parameters.There are two earning groups set up: >50k and <=50k.
+
+There are **two basic dataset** for the analysis. One for training the models and one for testing. Both datasets have the same structure. The aim of analysis is finding a model that can predict the earning category of an individual based on the characteristics (features) provided. Characteristics (features):
+
+   **Feature: type**
+
+- age: continuous
+- workclass: category
+- fnlwgt: continuous
+- education: category
+- education-num: continuous
+- marital-status: category
+- occupation: category
+- relationship: category
+- race: category
+- sex: category
+- capital-gain: continuous
+- capital-loss: continuous
+- hours-per-week: continuous
+- native-country
+
+**Process model building**, first the test and training sets are compared if they follow the same pattern. Second step, features are checked if they are suitable for the analysis. Third, based on the findings features are modified. As a fourts step, models are built and evaluated. Fifth, step models are tested on theseparated test set to verify if they provide good results on a separated dataset as well.
+
+**Dataset credits**: Lichman, M. (2013). UCI Machine Learning Repository: http://archive.ics.uci.edu/ml. Irvine, CA: University of California, School of Information and Computer Science.
+
+#Testing variables & features
+
+
+When loading datasets all non-numeric variables are treated as characters as in case of basic statistics factors sometimes mix up the calculations.
+
+
+## Target variable: earning
+
+Target variable is a binary variable with two possible values:
+- >50k , meaning yearly earnings above USD 50,000 and 
+- <=50k , meaning yearly earnings below (or equal to) USD 50,000.
+
+***Characteristics of earnings***
+```{r, echo=FALSE}
+pander(summary (dt$earning))
+```
+
+***Number of observations in each group***
+```{r, echo=FALSE}
+pander(table(dt$earning))
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+
+##### Training set vs Test set
+#class(train.adult.df)
+templist <- list(train.adult.df[, type := "train"], test.adult.df[, type := "test"])
+dtCompare <- rbindlist(templist, use.names=TRUE)
+
+for (i in c(2,4,6,7,8,9,10, 14,15)) {
+  dtCompare[[i]]<-as.factor(dtCompare[[i]])
+}
+dtCompare[[1]]<-as.numeric(dtCompare[[1]])
+#class(dtCompare$workclass)
+
+ggplot(dtCompare, aes(x=age))+geom_histogram(binwidth = 1)+facet_grid(type~., scales = "free")
+ggplot(dtCompare, aes(x=workclass))+geom_bar()+facet_grid(type~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+ggplot(dtCompare, aes(x=fnlwgt))+geom_bar(binwidth = 50000)+facet_grid(type~., scales = "free")
+ggplot(dtCompare, aes(x=education))+geom_bar()+facet_grid(type~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+ggplot(dtCompare, aes(x=education_num))+geom_bar()+facet_grid(type~., scales = "free")
+ggplot(dtCompare, aes(x=marital_status))+geom_bar()+facet_grid(type~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+ggplot(dtCompare, aes(x=occupation))+geom_bar()+facet_grid(type~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+ggplot(dtCompare, aes(x=relationship))+geom_bar()+facet_grid(type~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+ggplot(dtCompare, aes(x=race))+geom_bar()+facet_grid(type~., scales = "free")
+ggplot(dtCompare, aes(x=sex))+geom_bar()+facet_grid(type~., scales = "free")
+ggplot(dtCompare, aes(x=capital_gain))+geom_bar(binwidth = 10000)+facet_grid(type~., scales = "free")
+ggplot(dtCompare, aes(x=capital_loss))+geom_bar(binwidth = 1000)+facet_grid(type~., scales = "free")
+ggplot(dtCompare, aes(x=hours_per_week))+geom_bar()+facet_grid(type~., scales = "free")
+ggplot(dtCompare, aes(x=native_country))+geom_bar()+facet_grid(type~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+
+```
+
+
+
+
+
+
+
 
 ```{r}
 summary(cars)
