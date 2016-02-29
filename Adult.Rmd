@@ -470,7 +470,7 @@ I chose **Random Forest** and **GBM** methods.I used H20 for procesing.
 set.seed(73)
 
 
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
 set.seed(73)
 N <- nrow(training_base)
 id_tr <- sample(1:N,2*N/3)
@@ -513,34 +513,61 @@ dtTe$earning <- as.factor(dtTe$earning)
 ```
 
 
-# gmb
-```{r, echo=FALSE}
+# Results
 
+```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+# random forest
+system.time({
+  md <- h2o.randomForest(x = seq(ncol(dtTr) - 1), y = ncol(dtTr), 
+                         training_frame = dtTr, 
+                         mtries = -1, ntrees = 500, max_depth = 30, nbins = 200)
+})
+
+results <- data.frame(Model=character(), 
+                      MSE=numeric(), 
+                      AUC_validation = numeric(), 
+                      AUC_training = numeric(), 
+                      AUC_test = numeric())
+results <- rbind(results, c("Random Forest", 
+                            h2o.mse(md), 
+                            h2o.auc(md, train = TRUE), 
+                            h2o.auc(md, train = TRUE),
+                            h2o.auc(h2o.performance(md, dtTe))))
+cm_rf<-h2o.confusionMatrix(md)
+
+# gbm
 system.time({
   md <- h2o.gbm(x = seq(ncol(dtTr) - 1), y = ncol(dtTr), 
                 training_frame = dtTr, validation_frame = dtVa,
                 max_depth = 15, ntrees = 500, learn_rate = 0.01, nbins = 200,
                 stopping_rounds = 3, stopping_tolerance = 1e-3)
 })
-md
 
-h2o.auc(md)
-h2o.auc(h2o.performance(md, dtTe))
+
+results <- rbind(results, c("GBM", 
+                            h2o.mse(md), 
+                            h2o.auc(md, valid = TRUE), 
+                            h2o.auc(md, train = TRUE),
+                            h2o.auc(h2o.performance(md, dtTe))))
+base::colnames(results) <- c("Model","MSE","AUC_validation","AUC_training","AUC_test")
+cm_gbm<-h2o.confusionMatrix(md)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+pander(results)
+```
+
+**Confusion matrix of Random Forest**
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+pander(cm_rf)
+```
+
+**Confusion matrix of GBM**
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+pander(cm_gbm)
 ```
 
 
+**Tompa, Miklós**
 
-
-
-```{r}
-summary(cars)
-```
-
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-plot(cars)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
