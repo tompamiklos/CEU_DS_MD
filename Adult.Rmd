@@ -70,7 +70,7 @@ There are **two basic dataset** for the analysis. One for training the models an
 When loading datasets all non-numeric variables are treated as characters as in case of basic statistics factors sometimes mix up the calculations.
 
 
-## Target variable: earning
+### Target variable: earning
 
 Target variable is a binary variable with two possible values:
 - >50k , meaning yearly earnings above USD 50,000 and 
@@ -86,6 +86,10 @@ pander(summary (dt$earning))
 pander(table(dt$earning))
 ```
 
+### Training set vs Test set
+
+
+Test and training set is to be compared if they show the same distribution. As they are provided as separate datasets, it should be tested if they have the same characteristics, really randomly separated ones.
 
 ```{r, echo=FALSE, warning=FALSE}
 
@@ -117,8 +121,427 @@ ggplot(dtCompare, aes(x=native_country))+geom_bar()+facet_grid(type~., scales = 
 
 ```
 
+Test and training sets show the same distribution, so I decided to use them in this division.
+
+### Checking features - training set
 
 
+All the features should be checked if they are suitable for using in model building. I prepare distribution plots, check for missing values and outliers. 
+
+#### Feature: age
+
+```{r, echo=FALSE, warning=FALSE}
+plot(dt$age, main = "Age distribution", ylab = "Age", ylim = c(0, 110))
+ggplot(dt, aes(x=age))+geom_histogram(binwidth = 1)+facet_grid(earning~., scales = "free")
+```
+
+***General statistics of age***
+```{r, echo=FALSE, warning=FALSE}
+pander(summary(dt$age))
+```
+
+The number of mising values is `r sum(is.na(dt$age))`. As it could be seen the number of 90-year-old participants is quite high compared to the neighbouring values. The reason for this could be from more sources, e.g. it really covers all ages >=90. 
+
+```{r, echo=FALSE, warning=FALSE}
+# strange 90-year-old population - remove 90s
+a <- NULL
+for(i in 17:90){
+  a <- c(a, paste(i, ":",dt[age==i, .N]))
+}
+```
+
+
+***Distribution of age, in numbers***
+
+```{r, echo=FALSE, warning=FALSE}
+pander(a)
+
+dt[, logage:= log(age)]
+#ggplot(dt, aes(x=logage))+geom_histogram(binwidth = .02)+facet_grid(earning~., scales = "free")
+```
+
+The number of these observations (in total) is not high, so I decided to drop age 90 as outlying numbers.
+
+ 
+ 
+#### Feature: workclass
+
+The number of missing values is quite high, `r sum(is.na(dt$workclass))`, in percents `r sum(is.na(dt$workclass))/length(dt$workclass)*100`%. This is quite high, it should be decided to tranform or drop these observations.
+
+```{r, echo=FALSE, warning=FALSE}
+dt$workclass = as.factor(dt$workclass)
+ggplot(dt, aes(x=workclass))+geom_bar()+facet_grid(earning~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+```
+
+```{r, echo=FALSE, warning=FALSE}
+#unique(dt$workclass)
+dt$workclass = as.character(dt$workclass)
+# many NAs
+```
+
+#### Feature: fnlwgt
+
+This feature is a generated weight number based on social, economical and professional charactristics of the persons. Number of missing values is `r sum(is.na(dt$fnlwgt))`. General statistics show that the distribution is skewed:
+
+```{r, echo=FALSE, warning=FALSE}
+summary(dt$fnlwgt)
+```
+
+that could be followed on the histogram as well:
+```{r, echo=FALSE, warning=FALSE}
+ggplot(dt, aes(x=fnlwgt))+geom_histogram(binwidth = 30000)+facet_grid(earning~., scales = "free")
+```
+
+Number of values of *fnlwgt* above 750,000 is `r dt[fnlwgt>750000, .N]`. Although that is a low number I decided to keep every observation, as a result of eyeballing the chart below:
+
+```{r, echo=FALSE, warning=FALSE}
+plot(dt$fnlwgt, main = "fnlwgt distribution", ylab = "fnlwgt")
+dt[, logfnlwgt:= log(fnlwgt)]
+#ggplot(dt, aes(x=logfnlwgt))+geom_histogram(bins = 50)
+```
+
+
+
+#### Feature: education
+
+The number of missing values is `r sum(is.na(dt$education))`, with a minimal skew in distribution. 
+
+```{r, echo=FALSE, warning=FALSE}
+dt$education = as.factor(dt$education)
+ggplot(dt, aes(x=education))+geom_bar()+facet_grid(earning~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+#unique(dt$education)
+
+dt$education = as.character(dt$education)
+```
+
+
+####Feature: education_num
+
+The number of missing values is `r sum(is.na(dt$education_num))`. General statistics:
+
+```{r, echo=FALSE, warning=FALSE}
+pander(summary(dt$education_num))
+```
+
+
+
+```{r, echo=FALSE, warning=FALSE}
+#plot(dt$education_num, main = "education_num distribution", ylab = "education_num")
+ggplot(dt, aes(x=education_num))+geom_histogram(binwidth = 1)+facet_grid(earning~., scales = "free")
+```
+
+
+
+####Feature: marital status
+
+
+The number of missing values is `r sum(is.na(dt$marital_status))`. 
+
+```{r, echo=FALSE, warning=FALSE}
+dt$marital_status = as.factor(dt$marital_status)
+ggplot(dt, aes(x=marital_status))+geom_bar()+facet_grid(earning~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+#unique(dt$marital_status)
+
+dt$marital_status = as.character(dt$marital_status) 
+```
+
+
+####Feature: occupation
+
+
+The number of missing values is quite high, `r sum(is.na(dt$occupation))`, in percents `r sum(is.na(dt$occupation))/length(dt$occupation)*100`%. This is quite high, it should be decided to tranform or drop these observations.
+
+```{r, echo=FALSE, warning=FALSE}
+dt$occupation = as.factor(dt$occupation)
+ggplot(dt, aes(x=occupation))+geom_bar()+facet_grid(earning~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+#unique(dt$occupation)
+dt$occupation = as.character(dt$occupation) 
+```
+
+
+####Feature: relationship
+
+
+The number of missing values is `r sum(is.na(dt$relationship))`. 
+
+```{r, echo=FALSE, warning=FALSE}
+dt$relationship = as.factor(dt$relationship)
+ggplot(dt, aes(x=relationship))+geom_bar()+facet_grid(earning~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+#unique(dt$relationship)
+dt$relationship = as.character(dt$relationship)
+```
+
+
+####Feature: race
+
+
+The number of missing values is `r sum(is.na(dt$race))`. 
+
+```{r, echo=FALSE, warning=FALSE}
+dt$race = as.factor(dt$race)
+ggplot(dt, aes(x=race))+geom_bar()+facet_grid(earning~., scales = "free")
+#unique(dt$race)
+dt$race = as.character(dt$race)
+```
+
+
+####Feature: sex
+
+
+The number of missing values is `r sum(is.na(dt$sex))`. 
+
+```{r, echo=FALSE, warning=FALSE}
+dt$sex = as.factor(dt$sex)
+ggplot(dt, aes(x=sex))+geom_bar()+facet_grid(earning~., scales = "free")
+#unique(dt$sex)
+dt$sex = as.character(dt$sex)
+```
+
+
+####Feature: capital_gain
+
+
+Number of missing values is `r sum(is.na(dt$capital_gain))`. General statistics:
+
+
+```{r, echo=FALSE, warning=FALSE}
+pander(summary(dt$capital_gain))
+```
+
+
+Plots:
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+plot(dt$capital_gain, main = "capital_gain distribution", ylab = "capital_gain")
+ggplot(dt, aes(x=capital_gain))+geom_histogram()+facet_grid(earning~., scales = "free")
+
+```
+
+Plot for capital gain > 0
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+kingsOfTheHill <- dt[capital_gain>0,]
+ggplot(kingsOfTheHill, aes(x=capital_gain))+geom_histogram()+facet_grid(earning~., scales = "free")
+```
+
+Number of obsevations where capital gain > 0
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+kingsOfTheHill[,.N]
+```
+
+According to the plots and general statistics capital gain of 99,999 looks suspicious. Probably, the same situation as at 'age'. I consider these errorneous data.
+
+
+
+
+####Feature: capital_loss
+
+
+Number of missing values is `r sum(is.na(dt$capital_loss))`. General statistics:
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+pander(summary(dt$capital_loss))
+```
+
+Plots:
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+plot(dt$capital_loss, main = "capital_loss distribution", ylab = "capital_loss")
+ggplot(dt, aes(x=capital_loss))+geom_histogram()+facet_grid(earning~., scales = "free")
+```
+
+Plot for capital loss > 0
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+kingsOfTheDeep <- dt[capital_loss>0,]
+ggplot(kingsOfTheDeep, aes(x=capital_loss))+geom_histogram()+facet_grid(earning~., scales = "free")
+```
+
+Number of obsevations where capital loss > 0
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+kingsOfTheDeep[,.N]
+```
+
+According to the plots there is no need for adjusting this feature.
+
+
+####Feature: hours_per_week
+
+Number of missing values is `r sum(is.na(dt$hours_per_week))`. General statistics:
+
+```{r, echo=FALSE, warning=FALSE}
+pander(summary(dt$hours_per_week))
+```
+
+Distribution plots
+```{r, echo=FALSE, warning=FALSE}
+# 100 hours? - 84 and above - drop?
+plot(dt$hours_per_week, main = "hours_per_week distribution", ylab = "hours_per_week")
+ggplot(dt, aes(x=hours_per_week))+geom_histogram(binwidth = 1)+facet_grid(earning~., scales = "free")
+```
+
+```{r, echo=FALSE, warning=FALSE}
+a <- NULL
+for(i in 1:99){
+  a <- c(a, paste(i, ":",dt[hours_per_week==i, .N]))
+}
+
+pander(a)
+
+```
+
+Working hours above 84 per week make no sense - daily 12 hours, 7 days, and the plots and numbers shows that there are some problems with these figures. I plan to drop data above 84 hours/week.
+
+
+
+####Feature: Native country
+
+Number of missing values is `r sum(is.na(dt$native_country))`, in percentage `r sum(is.na(dt$native_country))/length(dt$native_country)*100`. 
+
+```{r, echo=FALSE, warning=FALSE}
+dt$native_country = as.factor(dt$native_country)
+ggplot(dt, aes(x=native_country))+geom_bar()+facet_grid(earning~., scales = "free")+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.45))
+#unique(dt$native_country)
+```
+
+Percentage of native countries (nr of persons):
+```{r, echo=FALSE, warning=FALSE}
+country <- data.table(table(dt$native_country, useNA = "always"))
+colnames(country) <- c("Country", "Nr")
+a <-  sum(country$Nr)
+country[, Percent :=  round(Nr/a*100,4)]
+pander(head(country[with(country,order(-Percent)),], 10))
+dt$native_country = as.character(dt$native_country)
+```
+
+##### Checking workclass and occupation NA-s
+
+Workclass and Occupation have very similar number of NAs. The recors with NAs are the same in `r sum(is.na(dt$occupation)==is.na(dt$workclass))/length(dt$workclass)`%. 
+
+#Feature transformation
+
+
+Decisions:
+- introducing new category for workclass and occupation NAs: UNKNOWN both in test and training/evaluation sets,
+- removing all remaining NAs from training/evaluation set,
+- removing 90-year-old observations.
+- removing capital gain of 99,999,
+- removing weekly working hous of 84 or more.
+
+```{r, echo=FALSE, warning=FALSE}
+training_base <- dt[,-18, with = FALSE]
+training_base <- training_base[,-17, with = FALSE]
+training_base <- training_base[,-16, with = FALSE]
+
+#fill missing variables in Workclass and occupation features
+test.adult.df$workclass[is.na(test.adult.df$workclass)] = "UNKNOWN"
+test.adult.df$occupation[is.na(test.adult.df$occupation)] = "UNKNOWN"
+training_base$workclass[is.na(training_base$workclass)] = "UNKNOWN"
+training_base$occupation[is.na(training_base$occupation)] = "UNKNOWN"
+
+# Deleting observations with NAs
+training_base <- na.omit(training_base)
+test.adult.df <- na.omit(test.adult.df)
+
+# Correcting Test set target and columns
+setDT(test.adult.df)
+test.adult.df[earning==" <=50K.", earning := " <=50K"] 
+test.adult.df[earning==" >50K.", earning := " >50K"] 
+test.adult.df <- test.adult.df[,-16, with = FALSE]
+
+# removing 90 year-olds 
+training_base <- filter(training_base, training_base$age!=90)
+test.adult.df <- filter(test.adult.df, test.adult.df$age!=90)  
+
+# removing hours_per_week > 83 (daily 12)
+training_base <- filter(training_base, training_base$hours_per_week<83)
+test.adult.df <- filter(test.adult.df, test.adult.df$hours_per_week<83)
+```
+
+Transformations above means 3% data loss.
+
+
+
+#Model building and selection
+
+
+After the modifications above I divided the training dataset into a training and a validation set. 
+
+I chose **Random Forest** and **GBM** methods.I used H20 for procesing.
+set.seed(73)
+
+
+```{r}
+set.seed(73)
+N <- nrow(training_base)
+id_tr <- sample(1:N,2*N/3)
+id_va <- sample(base::setdiff(1:N, id_tr))
+
+# chk sum(id_tr)+sum(id_va)-(32561+1)*32561/2
+
+trainingSet <- training_base[id_tr,]
+validationSet <- training_base[id_va,]
+
+
+### H2O # http://localhost:54321
+
+library(h2o)
+h2o.init(max_mem_size = "1g", nthreads = -1)
+
+#paste(names(trainingSet), collapse = ",")
+for (i in c(2,4,6,7,8,9,10, 14,15)) {
+  trainingSet[[i]]<-as.factor(trainingSet[[i]])
+  validationSet[[i]]<-as.factor(validationSet[[i]])
+  test.adult.df[[i]]<-as.factor(test.adult.df[[i]])
+}
+test.adult.df[[1]]<-as.numeric(test.adult.df[[1]])
+
+#str(trainingSet)
+#str(test.adult.df)
+#unique(trainingSet$earning)  
+#unique(validationSet$earning)
+#unique(test.adult.df$earning)
+
+### models
+#class(test.adult.df$earning)
+
+dtTr <- as.h2o(trainingSet)
+dtTr$earning <- as.factor(dtTr$earning)
+dtVa <- as.h2o(validationSet)
+dtVa$earning <- as.factor(dtVa$earning)
+dtTe <- as.h2o(test.adult.df)
+dtTe$earning <- as.factor(dtTe$earning)
+
+# random forest
+
+system.time({
+  md <- h2o.randomForest(x = seq(ncol(dtTr) - 1), y = ncol(dtTr), 
+                         training_frame = dtTr, 
+                         mtries = -1, ntrees = 500, max_depth = 30, nbins = 200)
+})
+
+
+
+
+md
+
+
+h2o.auc(md) 
+h2o.auc(h2o.performance(md, dtTe))
+
+```
+
+# gmb
+
+system.time({
+  md <- h2o.gbm(x = seq(ncol(dtTr) - 1), y = ncol(dtTr), 
+                training_frame = dtTr, validation_frame = dtVa,
+                max_depth = 15, ntrees = 500, learn_rate = 0.01, nbins = 200,
+                stopping_rounds = 3, stopping_tolerance = 1e-3)
+})
+md
+
+h2o.auc(md)
+h2o.auc(h2o.performance(md, dtTe))
 
 
 
@@ -135,3 +558,4 @@ plot(cars)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
