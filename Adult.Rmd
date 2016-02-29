@@ -470,7 +470,7 @@ I chose **Random Forest** and **GBM** methods.I used H20 for procesing.
 set.seed(73)
 
 
-```{r}
+```{r, echo=FALSE, warning=FALSE}
 set.seed(73)
 N <- nrow(training_base)
 id_tr <- sample(1:N,2*N/3)
@@ -510,27 +510,11 @@ dtVa <- as.h2o(validationSet)
 dtVa$earning <- as.factor(dtVa$earning)
 dtTe <- as.h2o(test.adult.df)
 dtTe$earning <- as.factor(dtTe$earning)
-
-# random forest
-
-system.time({
-  md <- h2o.randomForest(x = seq(ncol(dtTr) - 1), y = ncol(dtTr), 
-                         training_frame = dtTr, 
-                         mtries = -1, ntrees = 500, max_depth = 30, nbins = 200)
-})
-
-
-
-
-md
-
-
-h2o.auc(md) 
-h2o.auc(h2o.performance(md, dtTe))
-
 ```
 
+
 # gmb
+```{r, echo=FALSE}
 
 system.time({
   md <- h2o.gbm(x = seq(ncol(dtTr) - 1), y = ncol(dtTr), 
@@ -542,6 +526,7 @@ md
 
 h2o.auc(md)
 h2o.auc(h2o.performance(md, dtTe))
+```
 
 
 
